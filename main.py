@@ -1,31 +1,66 @@
+import io
 import os
+import urllib.request
 from functools import lru_cache
 from pathlib import Path
 
+import numpy as np
+import onnxruntime
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
-from rembg import new_session, remove
+from PIL import Image
 
 BASE_DIR = Path(__file__).resolve().parent
 MAX_FILE_SIZE = 20 * 1024 * 1024
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
-
-os.environ.setdefault("U2NET_HOME", str(BASE_DIR))
+MODEL_PATH = BASE_DIR / "u2net.onnx"
+MODEL_CACHE_PATH = Path("/tmp/u2net.onnx")
+MODEL_URL = os.environ.get(
+    "U2NET_MODEL_URL",
+    "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx",
+)
 
 
 @lru_cache(maxsize=1)
-def get_rembg_session():
-    return new_session("u2net")
+def get_model_path() -> Path:
+    if MODEL_PATH.exists():
+        return MODEL_PATH
+    if not MODEL_CACHE_PATH.exists():
+        urllib.request.urlretrieve(MODEL_URL, MODEL_CACHE_PATH)
+    return MODEL_CACHE_PATH
+
+
+@lru_cache(maxsize=1)
+def get_session():
+    return onnxruntime.InferenceSession(
+        str(get_model_path()),
+        providers=["CPUExecutionProvider"],
+    )
 
 
 def process_image(image: bytes) -> bytes:
-    return remove(
-        image,
-        session=get_rembg_session(),
-        force_return_bytes=True,
+    source = Image.open(io.BytesIO(image)).convert("RGB")
+    model_input = np.asarray(
+        source.resize((320, 320), Image.Resampling.LANCZOS),
+        dtype=np.float32,
+    ).transpose(2, 0, 1)[None] / 255.0
+    session = get_session()
+    output = session.run(
+        None,
+        {session.get_inputs()[0].name: model_input},
+    )[0][:, 0].squeeze()
+    output = (output - output.min()) / (output.max() - output.min())
+    mask = Image.fromarray((output * 255).astype(np.uint8)).resize(
+        source.size,
+        Image.Resampling.LANCZOS,
     )
+    source.putalpha(mask)
+
+    buffer = io.BytesIO()
+    source.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 app = FastAPI(title="Clearcut")
