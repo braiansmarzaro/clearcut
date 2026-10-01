@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Remove image backgrounds locally in one click.">
+    <title>Clearcut — Background Remover</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Clearcut home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        Clearcut
+      </a>
+      <span class="privacy-note">Private processing</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Background remover</p>
+        <h1 id="page-title">Keep the subject.<br><span>Dispose the rest.</span></h1>
+        <p class="subtitle">Drop in an image and get a clean, transparent PNG in seconds.</p>
+      </section>
+
+      <section class="workspace" aria-label="Image background remover">
+        <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-describedby="uploadHelp">
+          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <div class="upload-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"></path>
+              <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path>
+            </svg>
+          </div>
+          <h2>Drop your image here</h2>
+          <p id="uploadHelp">or <span>browse your files</span></p>
+          <small>JPG, PNG or WebP · up to 20 MB</small>
+        </div>
+
+        <div id="resultPanel" class="result-panel" hidden>
+          <div class="image-stage checkerboard">
+            <img id="resultImage" alt="Image with its background removed">
+            <div id="processing" class="processing" role="status">
+              <span class="spinner" aria-hidden="true"></span>
+              <strong>Removing background…</strong>
+              <small>This may take a moment</small>
+            </div>
+          </div>
+          <div class="result-actions">
+            <div>
+              <span class="success-dot" aria-hidden="true"></span>
+              <strong id="resultStatus">Ready to download</strong>
+              <small id="fileName"></small>
+            </div>
+            <div class="buttons">
+              <button id="resetButton" class="button secondary" type="button">Try another</button>
+              <a id="downloadButton" class="button primary" download="background-removed.png">Download PNG</a>
+            </div>
+          </div>
+        </div>
+
+        <p id="errorMessage" class="error-message" role="alert" hidden></p>
+      </section>
+    </main>
+
+    <footer>Images are processed in memory and are never stored.</footer>
+    <script src="/app.js"></script>
+  </body>
+</html>
